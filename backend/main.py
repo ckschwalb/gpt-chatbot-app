@@ -25,8 +25,8 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise RuntimeError("OPENAI_API_KEY environment variable not set.")
 
-# Initialize OpenAI client
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Initialize OpenAI client (v1+ API)
+client = OpenAI(api_key=OPENAI_API_KEY, api_version="v1")
 
 class ChatRequest(BaseModel):
     messages: list
@@ -43,7 +43,7 @@ async def chat_endpoint(req: ChatRequest):
             max_tokens=req.max_tokens,
             temperature=req.temperature,
         )
-        return {"choices": [choice.model_dump() for choice in response.choices]}
+        return {"choices": [{"message": response.choices[0].message}]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
