@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import openai
+from openai import OpenAI
 
 app = FastAPI()
 
@@ -24,7 +24,9 @@ app.add_middleware(
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise RuntimeError("OPENAI_API_KEY environment variable not set.")
-openai.api_key = OPENAI_API_KEY
+
+# Initialize OpenAI client
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 class ChatRequest(BaseModel):
     messages: list
@@ -35,13 +37,13 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 async def chat_endpoint(req: ChatRequest):
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=req.model,
             messages=req.messages,
             max_tokens=req.max_tokens,
             temperature=req.temperature,
         )
-        return {"choices": response["choices"]}
+        return {"choices": [choice.model_dump() for choice in response.choices]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
